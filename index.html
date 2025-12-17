@@ -2,329 +2,513 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TuneFree 音乐搜索下载器</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TuneFree 混合播放器</title>
     <style>
         :root {
-            --primary-color: #4a90e2;
-            --bg-color: #f5f7fa;
-            --card-bg: #ffffff;
-            --text-color: #333;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --bg: #f3f4f6;
+            --surface: #ffffff;
+            --text-main: #1f2937;
+            --text-sub: #6b7280;
+            --border: #e5e7eb;
         }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
             margin: 0;
-            padding: 20px;
-            background-color: var(--bg-color);
-            color: var(--text-color);
+            padding: 10px; /* 移动端留出少量边距 */
+            min-height: 100vh;
+            display: flex;
+            justify-content: center; /* 水平居中 */
+        }
+
+        /* 响应式容器：手机占满，电脑限宽 */
+        .main-card {
+            width: 100%;
+            max-width: 700px; /* 电脑端最大宽度 */
+            background: var(--surface);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
             display: flex;
             flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 800px;
-            background: var(--card-bg);
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             overflow: hidden;
-            padding: 24px;
-            box-sizing: border-box;
+            height: fit-content;
+            margin-top: 10px;
         }
 
-        /* 顶部信息 */
-        .header-info {
+        /* 顶部 Header */
+        .header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
             text-align: center;
-            margin-bottom: 24px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eee;
+            background: linear-gradient(to bottom, #ffffff, #f9fafb);
         }
 
-        h1 {
-            color: var(--primary-color);
+        .header h1 {
             margin: 0 0 10px 0;
-            font-size: 1.8rem;
+            color: var(--primary);
+            font-size: 1.4rem;
+            font-weight: 700;
         }
 
-        .credits {
-            font-size: 0.85rem;
-            color: #888;
-            margin-top: 5px;
-            font-style: italic;
-        }
-
-        .api-intro {
-            font-size: 0.85rem;
-            color: #666;
-            background-color: #f8f9fa;
-            padding: 12px;
-            border-radius: 8px;
-            margin-top: 15px;
-            text-align: left;
-            line-height: 1.6;
-            border: 1px solid #eee;
-        }
-
-        /* 搜索区域 */
-        .search-box {
+        .badges {
             display: flex;
-            gap: 12px;
-            margin-bottom: 10px;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
-        input[type="text"] {
-            flex: 1;
-            padding: 12px 16px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            outline: none;
-            font-size: 1rem;
-            transition: border-color 0.3s;
+        .badge {
+            background: #e5e7eb;
+            color: #4b5563;
+            padding: 4px 10px;
+            border-radius: 99px;
+            font-size: 0.75rem;
         }
 
-        input[type="text"]:focus {
-            border-color: var(--primary-color);
+        /* 播放器区域 */
+        .player-container {
+            background: #fafafa;
+            padding: 20px;
+            display: none; /* 默认隐藏 */
+            flex-direction: column;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            animation: slideDown 0.3s ease-out;
         }
 
-        button.search-btn {
-            padding: 0 24px;
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 1rem;
-            transition: background 0.3s;
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        button.search-btn:hover {
-            background-color: #357abd;
+        .cover-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            object-fit: cover;
+            margin-bottom: 15px;
+            background: #eee;
         }
 
-        /* 列表区域 */
-        .result-list {
-            list-style: none;
-            padding: 0;
+        .track-info {
+            text-align: center;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .track-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0 0 5px 0;
+            padding: 0 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .track-artist {
+            color: var(--text-sub);
+            font-size: 0.9rem;
             margin: 0;
         }
 
-        .result-item {
+        /* Iframe 音频容器 */
+        #audio-iframe-container {
+            width: 100%;
+            max-width: 400px; /* 播放器条最大宽度 */
+            height: 54px;
+            border-radius: 27px;
+            overflow: hidden;
+            background: #f3f4f6;
+            margin-bottom: 15px;
+        }
+
+        .lyrics-scroll {
+            height: 100px;
+            width: 100%;
+            padding: 10px;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            text-align: center;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            color: #555;
+            white-space: pre-line;
+            line-height: 1.6;
+        }
+
+        /* 搜索栏 */
+        .search-section {
+            padding: 20px;
+            display: flex;
+            gap: 10px;
+            background: #fff;
+            position: sticky;
+            top: 0;
+            z-index: 10; /* 列表滚动时搜索栏置顶 */
+            border-bottom: 1px solid transparent; /* 滚动时可加边框，这里保持简洁 */
+        }
+
+        input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            outline: none;
+            font-size: 1rem;
+            transition: all 0.2s;
+            min-width: 0; /* 防止溢出 */
+            background: #f9fafb;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            background: #fff;
+        }
+
+        button.btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        
+        button.btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        /* 列表结果 */
+        .result-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            flex: 1;
+            overflow-y: auto; /* 列表区域滚动 */
+        }
+
+        .list-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 16px;
-            border-bottom: 1px solid #eee;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
             transition: background 0.2s;
         }
 
-        .result-item:hover {
-            background-color: #f0f7ff;
+        .list-item:active {
+            background: #f3f4f6;
         }
 
-        .item-info {
+        .item-left {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
             flex: 1;
-            padding-right: 16px;
-            min-width: 0; /* 防止文本溢出 */
+            padding-right: 12px;
+            min-width: 0; /* 关键：防止文本撑开容器 */
         }
 
-        .item-title {
-            font-weight: 600;
-            display: block;
-            margin-bottom: 4px;
-            font-size: 1.05rem;
+        .song-name {
+            font-weight: 500;
+            font-size: 1rem;
+            color: var(--text-main);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
-        .item-artist {
-            font-size: 0.9rem;
-            color: #888;
-            display: block;
+        .song-meta {
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            display: flex;
+            align-items: center;
+            gap: 6px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
-        .platform-tag {
-            font-size: 0.75rem;
+        .tag {
+            font-size: 0.7rem;
             padding: 2px 6px;
             border-radius: 4px;
-            margin-left: 8px;
             color: white;
-            vertical-align: middle;
-            font-weight: normal;
+            flex-shrink: 0; /* 防止标签被压缩 */
         }
+        .tag.netease { background: #ef4444; }
+        .tag.qq { background: #10b981; }
+        .tag.kuwo { background: #f59e0b; }
+        .tag.migu { background: #ec4899; }
 
-        .tag-netease { background-color: #c20c0c; }
-        .tag-qq { background-color: #2da772; }
-        .tag-kuwo { background-color: #ffcd2d; color: #333; }
-        .tag-migu { background-color: #e91e63; }
-        
-        /* 按钮组 */
-        .action-buttons {
+        .item-actions {
             display: flex;
             gap: 8px;
+            flex-shrink: 0; /* 防止按钮被压缩 */
         }
 
-        .btn {
-            padding: 6px 12px;
-            border-radius: 6px;
+        .btn-icon {
+            padding: 8px 12px;
+            border-radius: 8px;
             font-size: 0.85rem;
             cursor: pointer;
             text-decoration: none;
-            transition: all 0.2s;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             border: 1px solid transparent;
+            font-weight: 500;
         }
 
-        .btn-download {
-            background-color: #e3f2fd;
-            color: #1565c0;
-            border-color: #bbdefb;
+        .btn-play {
+            background: #eff6ff;
+            color: var(--primary);
         }
-        .btn-download:hover { background-color: #bbdefb; }
-
-        .btn-copy {
-            background-color: #f5f5f5;
-            color: #616161;
-            border-color: #e0e0e0;
+        
+        .btn-dl {
+            background: #f3f4f6;
+            color: #4b5563;
         }
-        .btn-copy:hover { background-color: #eeeeee; }
 
-        .loading {
+        .loading-state {
             text-align: center;
-            padding: 20px;
-            color: #888;
+            padding: 40px;
+            color: var(--text-sub);
             display: none;
         }
 
-        .tip-text {
-            font-size: 0.8rem;
-            color: #999;
-            text-align: center;
-            margin-top: 10px;
+        /* 移动端适配优化 */
+        @media (max-width: 480px) {
+            body { padding: 0; }
+            .main-card { 
+                margin-top: 0; 
+                border-radius: 0; 
+                min-height: 100vh; 
+                box-shadow: none;
+            }
+            .header h1 { font-size: 1.2rem; }
+            .list-item { padding: 12px 16px; }
+            
+            /* 手机端按钮简化，只显示图标或缩小文字 */
+            .btn-icon span { display: inline; } /* 保持图标 */
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="header-info">
-        <h1>🎵 TuneFree 音乐搜索下载器</h1>
-        <div class="credits">
-            Code created by k via Gemini
-        </div>
-        <div class="api-intro">
-            <strong>ℹ️ 关于 API 作者：</strong><br>
-            本工具基于开源的 <strong>TuneFree API</strong> 构建。该 API 致力于打破音乐平台壁垒，聚合了网易云、QQ音乐等主流平台的资源，为开发者提供便捷的音乐检索与解析服务。<br>
-            <span style="font-size:0.8em; color:#aaa; margin-top:5px; display:block;">(注：本工具为本地 HTML 演示，不涉及任何后端服务)主页https://tunefree.fun/ )zspan>
+<div class="main-card">
+    <div class="header">
+        <h1>🎵 TuneFree 混合播放器</h1>
+        <div class="badges">
+            <span class="badge">Created by k via Gemini</span>
+            <span class="badge">InspireMusic 核心技术</span>
         </div>
     </div>
 
-    <!-- 搜索区域 -->
-    <div class="search-box">
-        <input type="text" id="searchInput" placeholder="输入歌曲名或歌手..." onkeypress="if(event.key === 'Enter') doSearch()">
-        <button class="search-btn" onclick="doSearch()">搜索</button>
-    </div>
-    <div class="tip-text">点击“打开/下载”将跳转到新页面，通常可直接播放或下载</div>
+    <!-- 播放器面板 -->
+    <div id="player-panel" class="player-container">
+        <!-- 封面图：referrerpolicy="no-referrer" 解决防盗链 -->
+        <img id="player-cover" class="cover-image" src="" alt="Album Art" referrerpolicy="no-referrer">
+        
+        <div class="track-info">
+            <h2 id="player-title" class="track-title">歌曲标题</h2>
+            <p id="player-artist" class="track-artist">歌手</p>
+        </div>
 
-    <!-- 结果列表 -->
-    <div class="loading" id="loading">正在搜索中...</div>
-    <ul class="result-list" id="resultList">
-        <!-- 搜索结果将插入这里 -->
-    </ul>
+        <!-- 音频容器 -->
+        <div id="audio-iframe-container"></div>
+
+        <div id="player-lyrics" class="lyrics-scroll"></div>
+    </div>
+
+    <!-- 搜索栏 -->
+    <div class="search-section">
+        <input type="text" id="search-input" placeholder="搜索歌曲..." inputmode="search">
+        <button class="btn-primary" onclick="doSearch()">搜索</button>
+    </div>
+
+    <!-- 状态与列表 -->
+    <div id="loading-state" class="loading-state">🔍 正在搜索全网乐库...</div>
+    <ul id="result-list" class="result-list"></ul>
 </div>
 
 <script>
-    // 使用稳定性较高的镜像 API 地址
-    const API_BASE = 'https://music-dl.sayqz.com/api'; 
+    // 完整且未被截断的 JS 代码
+    const API_BASE = 'https://music-dl.sayqz.com/api';
+    let currentResults = [];
 
+    // 绑定回车搜索事件
+    document.getElementById('search-input').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') doSearch();
+    });
+
+    // 1. 搜索功能
     async function doSearch() {
-        const keyword = document.getElementById('searchInput').value.trim();
-        if (!keyword) {
-            alert('请输入关键词');
+        const query = document.getElementById('search-input').value.trim();
+        if (!query) {
+            alert("请输入关键词");
             return;
         }
 
-        const loading = document.getElementById('loading');
-        const list = document.getElementById('resultList');
-        
-        list.innerHTML = '';
-        loading.style.display = 'block';
+        // UI 状态重置
+        const loadingEl = document.getElementById('loading-state');
+        const listEl = document.getElementById('result-list');
+        loadingEl.style.display = 'block';
+        listEl.innerHTML = '';
+        currentResults = []; // 清空数据
 
         try {
-            const response = await fetch(`${API_BASE}/?type=aggregateSearch&keyword=${encodeURIComponent(keyword)}`);
-            const data = await response.json();
-
-            loading.style.display = 'none';
+            // 发起请求
+            const res = await fetch(`${API_BASE}/?type=aggregateSearch&keyword=${encodeURIComponent(query)}`);
+            const data = await res.json();
+            
+            loadingEl.style.display = 'none';
 
             if (data.code === 200 && data.data) {
-                const results = Array.isArray(data.data) ? data.data : (data.data.results || []);
-                renderList(results);
+                // 数据兼容处理
+                const list = Array.isArray(data.data) ? data.data : (data.data.results || []);
+                const validList = list.filter(item => item.id); // 过滤无效ID
+                
+                if (validList.length > 0) {
+                    currentResults = validList;
+                    renderList(validList);
+                } else {
+                    listEl.innerHTML = '<div style="text-align:center;padding:30px;color:#888">未找到相关歌曲</div>';
+                }
             } else {
-                list.innerHTML = '<li style="text-align:center;padding:20px;color:#666;">未找到相关歌曲</li>';
+                listEl.innerHTML = '<div style="text-align:center;padding:30px;color:#888">未找到结果</div>';
             }
-        } catch (error) {
-            console.error("Search Error:", error);
-            loading.style.display = 'none';
-            list.innerHTML = '<li style="text-align:center;padding:20px;color:red;">搜索失败，请检查网络连接</li>';
+        } catch (e) {
+            console.error(e);
+            loadingEl.style.display = 'none';
+            listEl.innerHTML = '<div style="text-align:center;padding:30px;color:red">网络请求失败，请检查网络</div>';
         }
     }
 
-    function renderList(results) {
-        const list = document.getElementById('resultList');
-        const validResults = results.filter(item => item.id);
+    // 2. 渲染列表
+    function renderList(list) {
+        const ul = document.getElementById('result-list');
+        ul.innerHTML = '';
 
-        if(validResults.length === 0) {
-            list.innerHTML = '<li style="text-align:center;padding:20px;">未找到结果</li>';
-            return;
-        }
-
-        validResults.forEach(song => {
+        list.forEach((song, index) => {
             const li = document.createElement('li');
-            li.className = 'result-item';
+            li.className = 'list-item';
             
-            let platformClass = 'tag-' + song.platform;
-            
-            // 构建下载链接
-            // 使用 br=320k 请求高音质
+            // 平台标签样式
+            const platformMap = {
+                'netease': { name: '网易', class: 'netease' },
+                'qq': { name: 'QQ', class: 'qq' },
+                'kuwo': { name: '酷我', class: 'kuwo' },
+                'migu': { name: '咪咕', class: 'migu' }
+            };
+            const pf = platformMap[song.platform] || { name: song.platform, class: 'netease' };
+
+            // 下载链接
             const downloadUrl = `${API_BASE}/?source=${song.platform}&id=${song.id}&type=url&br=320k`;
 
             li.innerHTML = `
-                <div class="item-info">
-                    <span class="item-title">
-                        ${escapeHtml(song.name)} 
-                        <span class="platform-tag ${platformClass}">${song.platform}</span>
-                    </span>
-                    <span class="item-artist">${escapeHtml(song.artist)}</span>
+                <div class="item-left">
+                    <div class="song-name">${escapeHtml(song.name)}</div>
+                    <div class="song-meta">
+                        <span class="tag ${pf.class}">${pf.name}</span>
+                        ${escapeHtml(song.artist)}
+                    </div>
                 </div>
-                <div class="action-buttons">
-                    <button class="btn btn-copy" onclick="copyToClipboard('${downloadUrl}')">复制链接</button>
-                    <a href="${downloadUrl}" target="_blank" rel="noreferrer" class="btn btn-download">打开/下载</a>
+                <div class="item-actions">
+                    <button class="btn-icon btn-play" onclick="playMusic(${index})">
+                        <span>▶</span> 播放
+                    </button>
+                    <a href="${downloadUrl}" target="_blank" rel="noreferrer" class="btn-icon btn-dl">
+                        <span>⬇</span>
+                    </a>
                 </div>
             `;
-            list.appendChild(li);
+            ul.appendChild(li);
         });
     }
 
+    // 3. 播放功能 (Iframe 隔离技术)
+    async function playMusic(index) {
+        const song = currentResults[index];
+        if (!song) return;
+
+        // 显示播放器面板
+        const playerPanel = document.getElementById('player-panel');
+        playerPanel.style.display = 'flex';
+        
+        // 更新信息
+        document.getElementById('player-title').innerText = song.name;
+        document.getElementById('player-artist').innerText = song.artist;
+        document.getElementById('player-lyrics').innerText = "正在加载歌词...";
+        
+        // 设置封面
+        document.getElementById('player-cover').src = `${API_BASE}/?source=${song.platform}&id=${song.id}&type=pic`;
+
+        // 构造音频地址
+        const audioUrl = `${API_BASE}/?source=${song.platform}&id=${song.id}&type=url&br=320k`;
+
+        // --- 核心逻辑：创建 iframe 播放器 ---
+        const container = document.getElementById('audio-iframe-container');
+        container.innerHTML = ''; // 清除旧播放器
+
+        const iframe = document.createElement('iframe');
+        iframe.style.width = "100%";
+        iframe.style.height = "100%";
+        iframe.style.border = "none";
+        iframe.src = "about:blank"; // 空白页初始化
+        
+        container.appendChild(iframe);
+
+        const doc = iframe.contentWindow.document;
+        doc.open();
+        doc.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <meta name="referrer" content="no-referrer"> <!-- 关键：隐藏来源 -->
+                <style>
+                    body { margin: 0; display: flex; align-items: center; justify-content: center; background: #f3f4f6; overflow: hidden; height: 100vh; }
+                    audio { width: 95%; height: 40px; outline: none; }
+                </style>
+            </head>
+            <body>
+                <audio controls autoplay>
+                    <source src="${audioUrl}" type="audio/mp3">
+                </audio>
+            </body>
+            </html>
+        `);
+        doc.close();
+        // --------------------------------
+
+        // 获取歌词
+        try {
+            const lrcRes = await fetch(`${API_BASE}/?source=${song.platform}&id=${song.id}&type=lrc`);
+            const lrcText = await lrcRes.text();
+            document.getElementById('player-lyrics').innerText = lrcText || "暂无歌词";
+        } catch (e) {
+            document.getElementById('player-lyrics').innerText = "歌词加载失败";
+        }
+    }
+
+    // 工具函数
     function escapeHtml(text) {
         if (!text) return '';
         return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-    }
-
-    function copyToClipboard(text) {
-        navigator.clipboard.writeText(text).then(() => {
-            alert('下载链接已复制！您可以将其粘贴到浏览器地址栏或 IDM 中下载。');
-        }).catch(err => {
-            console.error('复制失败', err);
-            // 降级处理：弹窗显示链接
-            prompt("复制失败，请手动复制链接：", text);
-        });
     }
 </script>
 
